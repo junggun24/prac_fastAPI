@@ -155,7 +155,7 @@ async def read_items(
         max_length=50,
         regex="^fixedquery$",
         
-        deprecated=True,
+        deprecated=True, 
 
     )
 ):
