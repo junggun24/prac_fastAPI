@@ -3,11 +3,11 @@ from fastapi import FastAPI
 
 from enum import Enum
 
-from fastapi import FastAPI,Query
+from fastapi import Body,FastAPI,Query,Path
 
 from typing import List,Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 ######
 
@@ -24,6 +24,19 @@ class Item(BaseModel):
     price: float
     tax: Optional[float] = None
 
+
+class User(BaseModel):
+    username: str
+    full_name: Optional[str] = None
+
+class Item(BaseModel):
+    name: str
+    description: Optional[str] = Field(
+        None, title="The description of the item", max_length=300
+    )
+    price: float = Field(..., gt=0, description="The price must be greater than zero")
+    tax: Optional[float] = None
+    
 #######
 
 app = FastAPI()
@@ -159,7 +172,56 @@ async def read_items(
 
     )
 ):
+
     results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
     if q:
         results.update({"q": q})
+    return results
+
+# query, path, body
+@app.put("/items12/{item_id}")
+async def update_item(
+    *,
+    item_id: int = Path(..., title="The ID of the item to get", ge=0, le=1000),
+    q: Optional[str] = None,
+    item: Optional[Item] = None,
+):
+    results = {"item_id": item_id}
+    if q:
+        results.update({"q": q})
+    if item:
+        results.update({"item": item})
+    return results
+
+#multiple body
+@app.put("/items13/{item_id}")
+
+async def update_item(item_id: int, item: Item, user: User):
+
+    results = {"item_id": item_id, "item": item, "user": user}
+    return results
+
+#single body
+@app.put("/items14/{item_id}")
+async def update_item(
+
+    item_id: int, item: Item, user: User, importance: int = Body(...)
+
+):
+    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+    return results
+
+#enbed
+@app.put("/items15/{item_id}")
+
+async def update_item(item_id: int, item: Item = Body(..., embed=True)):
+
+    results = {"item_id": item_id, "item": item}
+    return results
+item: Item = Body(..., embed=True)
+
+#field
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item = Body(..., embed=True)):
+    results = {"item_id": item_id, "item": item}
     return results
